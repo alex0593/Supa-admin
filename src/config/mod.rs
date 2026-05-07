@@ -14,11 +14,12 @@ impl Config {
         let proj_dirs = ProjectDirs::from("com", "supa", "supa-admin")
             .context("No se pudo determinar el directorio de configuración del sistema")?;
         let config_dir = proj_dirs.config_dir();
-        
+
         if !config_dir.exists() {
-            fs::create_dir_all(config_dir).context("No se pudo crear el directorio de configuración")?;
+            fs::create_dir_all(config_dir)
+                .context("No se pudo crear el directorio de configuración")?;
         }
-        
+
         Ok(config_dir.join("config.json"))
     }
 
