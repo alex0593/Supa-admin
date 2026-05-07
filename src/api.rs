@@ -58,27 +58,45 @@ impl SupabaseClient {
         Ok(projects)
     }
 
-    pub async fn pause_project(&self, ref_id: &str) -> Result<(), Error> {
+    pub async fn pause_project(&self, ref_id: &str) -> Result<(), String> {
         let url = format!("https://api.supabase.com/v1/projects/{}/pause", ref_id);
         let response = self.client
             .post(&url)
             .bearer_auth(&self.token)
             .send()
-            .await?;
-            
-        response.error_for_status()?;
-        Ok(())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        match response.status() {
+            s if s.is_success() => Ok(()),
+            reqwest::StatusCode::FORBIDDEN => Err(
+                "403 Prohibido: Solo los proyectos del Free Tier pueden pausarse via API.".to_string()
+            ),
+            reqwest::StatusCode::UNAUTHORIZED => Err(
+                "401 No autorizado: Verifica que tu Personal Access Token sea valido.".to_string()
+            ),
+            s => Err(format!("Error {}: No se pudo pausar el proyecto.", s)),
+        }
     }
 
-    pub async fn resume_project(&self, ref_id: &str) -> Result<(), Error> {
+    pub async fn resume_project(&self, ref_id: &str) -> Result<(), String> {
         let url = format!("https://api.supabase.com/v1/projects/{}/restore", ref_id);
         let response = self.client
             .post(&url)
             .bearer_auth(&self.token)
             .send()
-            .await?;
-            
-        response.error_for_status()?;
-        Ok(())
+            .await
+            .map_err(|e| e.to_string())?;
+
+        match response.status() {
+            s if s.is_success() => Ok(()),
+            reqwest::StatusCode::FORBIDDEN => Err(
+                "403 Prohibido: No tienes permisos para reanudar este proyecto.".to_string()
+            ),
+            reqwest::StatusCode::UNAUTHORIZED => Err(
+                "401 No autorizado: Verifica que tu Personal Access Token sea valido.".to_string()
+            ),
+            s => Err(format!("Error {}: No se pudo reanudar el proyecto.", s)),
+        }
     }
 }
